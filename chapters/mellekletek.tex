@@ -1,0 +1,238 @@
+\subsection{Az infrastruktúra környezet}
+
+\subsubsection*{compose.yml}
+\begin{lstlisting}
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:${PORTAINER_VERSION:-latest}
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    ports:
+      - 8100:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $DATA_DIR/$COMPOSE_PROJECT_NAME/portainer/data:/data
+    networks:
+      - infranet
+
+  gitea:
+    image: gitea/gitea:${GITEA_VERSION:-latest}
+    container_name: gitea
+    environment:
+      USER_UID: 1000
+      USER_GID: 1000
+      GITEA__WEBHOOK__ALLOWED_HOST_LIST: "drone"
+      GITEA__SERVER__ROOT_URL: "http://localhost:8101/"
+    volumes:
+      - $DATA_DIR/$COMPOSE_PROJECT_NAME/gitea/data:/data
+    ports:
+      - 8101:3000
+      - 8122:22
+    networks:
+      - infranet
+
+  drone:
+    image: drone/drone:${DRONE_VERSION:-latest}
+    container_name: drone
+    environment:
+      # DRONE_GITEA_SERVER: http://localhost:8101
+      DRONE_GITEA_SERVER: http://gitea:3000
+      DRONE_GITEA_CLIENT_ID: ${DRONE_GITEA_CLIENT_ID}
+      DRONE_GITEA_CLIENT_SECRET: ${DRONE_GITEA_CLIENT_SECRET}
+      DRONE_RPC_SECRET: ${DRONE_RPC_SECRET}
+      DRONE_USER_CREATE: username:szepesisz,admin:true
+      DRONE_SERVER_HOST: localhost:8102
+      DRONE_SERVER_PROTO: http
+    volumes:
+      - $DATA_DIR/$COMPOSE_PROJECT_NAME/drone/data:/data
+    ports:
+      - "8102:80"
+    depends_on:
+      - gitea
+    networks:
+      - infranet
+
+  drone-runner:
+    image: drone/drone-runner-docker:${DRONE_DOCKER_RUNNER_VERSION:-latest}
+    container_name: drone-runner
+    environment:
+      DRONE_RPC_PROTO: http
+      DRONE_RPC_HOST: drone:80
+      DRONE_RPC_SECRET: ${DRONE_RPC_SECRET}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - drone
+    networks:
+      - infranet
+
+networks:
+  infranet:
+\end{lstlisting}
+
+.\subsubsection*{.env}
+\begin{lstlisting}
+COMPOSE_PROJECT_NAME=infra
+
+DATA_DIR=/home/ubuntu/.data
+
+PORTAINER_VERSION=2.39.0
+GITEA_VERSION=1.25.5
+DRONE_VERSION=2
+DRONE_DOCKER_RUNNER_VERSION=1
+
+
+DRONE_GITEA_CLIENT_ID=...
+DRONE_GITEA_CLIENT_SECRET=...
+DRONE_RPC_SECRET=...
+\end{lstlisting}
+
+
+\subsection{Az demo környezet}
+
+\subsubsection*{compose.yml}
+\begin{lstlisting}
+    
+services:
+  lorawan-sniffer-test:
+    image: oe-lorawan/oe-lorawan-sniffer:${LORAWAN_SNIFFER_VERISON:-latest}
+    environment:
+      - OE_LORAWAN_SNIFFER_CONFIG=/app/logging.toml,/app/config.toml
+    volumes:
+      - $PORTAINER_STACKS_DIR/$PORTAINER_STACK_ID/lorawan-sniffer/config.toml:/app/config.toml
+      - $PORTAINER_STACKS_DIR/$PORTAINER_STACK_ID/logging.toml:/app/logging.toml
+    ports:
+      - 8103:8000
+      - 8104:8001
+\end{lstlisting}
+
+\subsubsection*{.env}
+\begin{lstlisting}
+PORTAINER_STACKS_DIR=/home/ubuntu/.data/infra/portainer/data/compose
+PORTAINER_STACK_ID=2
+\end{lstlisting}
+
+\subsection{A demo service}
+
+
+\subsubsection*{Dockerfile}
+\begin{lstlisting}
+  ARG PYTHON_VERSION=3.13
+
+FROM python:${PYTHON_VERSION}-slim AS base
+ENV PIP_ROOT_USER_ACTION=ignore
+RUN apt-get update && \
+    yes | apt-get install git && \
+    pip install build
+COPY . .
+RUN python -m build .
+
+FROM python:${PYTHON_VERSION}-slim AS wheel
+ENV PIP_ROOT_USER_ACTION=ignore
+COPY --from=base dist/*.whl .
+
+
+FROM wheel AS build
+RUN pip install $(find ./*.whl)  && \
+    rm $(find ./*.whl) && \
+    mkdir /app
+WORKDIR /app
+ENV PYTHONBUFFERED=1
+ENTRYPOINT ["app"]
+
+
+FROM build AS test
+WORKDIR /
+COPY --from=base . .
+RUN python \
+        -m pip install \
+            -r requirements_test.txt  \
+            pytest pytest-cov \
+            bandit ruff \
+    && mkdir \
+        -p testresults \
+    && python \
+        -m pytest \
+            --junitxml testresults/unittests.junit.xml \
+            --cov-report xml:testresults/coverage.xml \
+            --color=no \
+        || true \
+    && python \
+        -m bandit \
+            --exit-zero \
+            -r \
+            -f xml \
+            src \
+        > testresults/bandit.junit.xml \
+    && sed \
+        -i 's/classname\=\"src/classname\=\"bandit\.src/g' \
+        testresults/bandit.junit.xml \
+    && python \
+        -m ruff check \
+            --exit-zero \
+            src \
+        > testresults/ruff.junit.xml
+
+\end{lstlisting}
+
+\subsubsection*{.drone.yml}
+\begin{lstlisting}
+kind: pipeline
+type: docker
+name: default
+
+clone:
+  disable: true
+
+steps:
+- name: clone
+  image: alpine/git
+  commands:
+  - git clone http://192.168.0.173:8101/oe-lorawan/oe-lorawan-sniffer.git .
+  - git fetch --tags
+  - git checkout $DRONE_COMMIT
+
+- name: test
+  image: docker:24.0
+  privileged: true
+  commands:
+  - docker build --target test .
+
+  volumes:
+    - name: docker
+      path: /var/run/docker.sock
+
+
+- name: build
+  image: docker:24.0
+  privileged: true
+  commands:
+  - docker build --tag oe-lorawan/oe-lorawan-sniffer --target build .
+  - docker tag oe-lorawan/oe-lorawan-sniffer oe-lorawan/oe-lorawan-sniffer:$(docker run oe-lorawan/oe-lorawan-sniffer --version)
+  - docker tag oe-lorawan/oe-lorawan-sniffer oe-lorawan/oe-lorawan-sniffer:latest
+
+  volumes:
+    - name: docker
+      path: /var/run/docker.sock
+
+- name: deploy
+  image: curlimages/curl:8.17.0
+  secrets: [ portainer_api_key ]
+  environment:
+    PORTAINER_API_KEY:
+      from_secret: portainer_api_key
+
+  commands:
+  - echo "hi $PORTAINER_API_KEY"
+  - "curl -i -X PUT
+     http://192.168.0.173:8100/api/stacks/2/git/redeploy?endpointId=1 -H
+     \"X-API-KEY: $PORTAINER_API_KEY\" --json '{ \"ForceUpdate\": false }'"
+
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+\end{lstlisting}
+

@@ -1,30 +1,42 @@
 % template file include
 \input{template}
 
-
-
-
 \begin{document}
+
+\begin{titlepage}
+    \begin{center}
+        \vspace*{\fill}
+        {\Large
+        \textbf{Felhő alapú IoT és Big Data platformok\\
+        Féléves feladat}}\\[3cm]
+
+        {\Large
+        \textbf{Docker alapú CI/CD infrastruktúra kiépítése a LoRaWan Kiberbiztonsági kutatócsoport munkájának támogatására}}\\[3cm]
+            
+        \vspace*{\fill}
+        
+       
+        % Cím - 14 pontos, félkövér, középre igazított
+        
+        % Szerző(k) - 12 pontos, dőlt, középre igazított
+        \normalsize
+        \textit{Szepesi Szabolcs, DS62C1, Mérnökinformatika MSc.}\\[2cm]
+        
+        % Témavezető(k) és intézmény
+        \normalsize
+
+        Óbudai Egyetem\\
+        Neumann János Informatikai Kar\\
+
+        \vspace*{\fill}
+        
+        \the\year
+        
+    \end{center}
+\end{titlepage}
 
 
 \pagenumbering{gobble}
-
-% ELŐLAPOK: borító, feladatlap, nyilatkozat, konzultációs napló
-\includepdf[pages=-]{includes/BELSO-BORITOLAP_DM.pdf}
-\includepdf[pages=-]{includes/FELADATLAP.pdf}
-\includepdf[pages=-]{includes/HALLGATOI-NYILATKOZAT_DM.pdf}
-\includepdf[pages=-]{includes/KONZULTACIOS-NAPLO_DM2_NAPPALI 1.pdf}
-\includepdf[pages=-]{includes/KONZULTACIOS-NAPLO_DM3_NAPPALI 1.pdf}
-\includepdf[pages=-]{includes/KONZULTACIOS-NAPLO_DM4_NAPPALI 1.pdf}
-
-
-
-\section*{ABSZTRAKT}
-Absztrakt magyarul.
-
-\newpage
-\section*{ABSTRACT}
-Abstract in english.
 
 
 
@@ -44,39 +56,54 @@ Abstract in english.
 \input{chapters/1_Bevezetes}
 
 \clearpage
-\section{PÉLDA FEJEZET}
-\input{chapters/2_Pelda_Fejezet}
+\section{IMPLEMENTÁCIÓ}
+\input{chapters/2_Implementacio}
 
 
 
+\clearpage
+\section{EREDMÉNY}
 
+Egy tömör, de látványos bemutató a projekt eredményéből. Minimális változtatást végzek a .drone.yml fileon. A push előtt és után lekérem az aktuális alkalmazásverziót. 
 
+\begin{lstlisting}
+szepesisz@neo:~/Documents/OE/lora/LoRaWAN-sniffer$ curl --silent http://localhost:8103/openapi.json | jq -r .info.version
+0.2.1.dev68
 
+szepesisz@neo:~/Documents/OE/lora/LoRaWAN-sniffer$ git add .drone.yml && git commit -m "update drone.yml" && git push gitea develop
+...
+szepesisz@neo:~/Documents/OE/lora/LoRaWAN-sniffer$ date
+Wed Apr  8 10:28:11 PM CEST 2026
 
+\end{lstlisting}
 
+A pipeline lefutása után:
 
+\begin{lstlisting}
+
+szepesisz@neo:~/Documents/OE/lora/LoRaWAN-sniffer$ curl --silent http://localhost:8103/openapi.json | jq -r .info.version
+0.2.1.dev69
+szepesisz@neo:~/Documents/OE/lora/LoRaWAN-sniffer$ date
+Wed Apr  8 10:29:31 PM CEST 2026
+
+\end{lstlisting}
+
+A folyamat tapasztalatom szerint stabilan működik, a további munkám során a kutatócsoportban, valamint a diplomamunkában jelentős segítség lesz, valamint a projektvezetők is pozitívan fogadták a környezet fejlesztését.
+
+\clearpage
+\section{MELLÉKLETEK}
+\input{chapters/mellekletek}
 
 % ------------------------------------------------------
 
 % JEGYZÉKEK, INNEN KI LEHET KOMMENTEZNI AMELYIK ESETLEG NEM KELL (de ha van ábra/táblázat akkor kötelező, irodalomjegyzék kötelező, rövidítések opcionális)
 
-\clearpage
-\section{IRODALOMJEGYZÉK}
-\printbibliography[heading=none]
 
 \clearpage
 \renewcommand{\listfigurename}{ÁBRAJEGYZÉK}
 \listoffigures
 
 \clearpage
-\renewcommand{\listtablename}{TÁBLAJEGYZÉK}
-\listoftables
-
-\clearpage
-\section{RÖVIDÍTÉSEK}
-\input{acronyms}
-
-
 
 
 

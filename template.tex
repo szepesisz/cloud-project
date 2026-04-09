@@ -55,6 +55,17 @@
 % times new roman betűtípus
 \usepackage{times}
 
+\usepackage{listings}
+\lstset{
+basicstyle=\small\ttfamily\linespread{0.6},
+columns=flexible,
+breaklines=true,
+lineskip=-1pt
+}
+
+% Verbatim spacing
+\AtBeginEnvironment{verbatim}{\setlength{\lineskip}{0pt}}
+
 % ábra és táblázat számozás beállítása fejezetenként
 \setcounter{figure}{0}
 \renewcommand{\thefigure}{\arabic{section}.\arabic{figure}}

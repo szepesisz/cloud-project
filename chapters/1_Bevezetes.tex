@@ -1,10 +1,17 @@
-Diplomamunka template.
 
-\subsection{Példa alfejezet}
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+\subsection{A környezet}
+Az Egyetemen működő kutatócsoport a LoRaWan protokoll kiberbiztonsági kutatását végzi.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+A tesztlabor egy, az Open Telekom Cloud-on futó virtuális gépen található. A kutatáshoz használt komponensek (LoRaWan Gateway, ELK-stack, saját service-ek) docker környezetben futnak.
 
 
-\subsubsection{Példa al-alfejezet}
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+\subsection{A cél}
+
+A korábbi működés szerint a forrásokat a fejlesztő eljuttatja a szerverre, majd a Docker Compose indításakor a forrásból buildeli le.
+
+A projektmunka által megvalósítani kívánt eredmény az, hogy a verziókezelő rendszerbe érkezett push hatására az új állapot automatikusan telepítésre kerüljön. A munka hatáskörébe ennek a rendszernek az alapvető működésének a kiépítése tartozik, nem a végleges, produkció-kész, finomhangolt állapot. Annak kialakítása a rendszer hosszabb távú használata során szerzett tapasztalatokra, és a kutatócsoport tagjaival való egyeztetések eredményeire épülhet.
+
+A diplomamunkám során a feladatom lesz több új microservice készítése, valamint a meglévők átfogó keretrendszerbe foglalása. Ebben a folyamatban jelentős segítséget jelent egy megbízható CI/CD folyamat.
+
+
